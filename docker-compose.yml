@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  exporter:
+    image: samber/clevercloud-logs-to-elk:0.10.1
+    build: .
+    environment:
+      - CLEVERCLOUD_TOKEN=xxxxxxxxxxxxxxx
+      - CLEVERCLOUD_SECRET=xxxxxxxxxxxxxxx
+      - CLEVERCLOUD_APP=app_xxxxxxx-xxxxxxx-xxxxxxx
+      - LOGSTASH_HOST=logstash
+      - LOGSTASH_PORT=5000
+    depends_on:
+      - logstash
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.2.2
+    ports:
+      - "9200:9200"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash-oss:6.2.2
+    volumes:
+      - ./logstash/config:/usr/share/logstash/config
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5000:5000"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:6.2.2
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
